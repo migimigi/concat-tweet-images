@@ -70,10 +70,16 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Header().Add("content-type", "image/jpeg")
-	w.Write(result)
+	w.Header().Add("content-disposition", fmt.Sprintf("filename=\"%s.jpg\"", result.Tweetid))
+	w.Write(result.Image)
 }
 
-func concatImages(rawurl string, isHorizon bool) ([]byte, error) {
+type Result struct {
+	Tweetid string
+	Image   []byte
+}
+
+func concatImages(rawurl string, isHorizon bool) (*Result, error) {
 	url, err := url.Parse(rawurl)
 	if err != nil {
 		return nil, err
@@ -102,11 +108,11 @@ func concatImages(rawurl string, isHorizon bool) ([]byte, error) {
 	if isHorizon {
 		command = "+append"
 	}
-	result, err := exec.Command("convert", command, filepath.Join(tmpdir, "/*"), "jpeg:-").Output()
+	bytes, err := exec.Command("convert", command, filepath.Join(tmpdir, "/*"), "jpeg:-").Output()
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
+	return &Result{Image: bytes, Tweetid: paths[3]}, nil
 }
 
 func parse(url string) ([]string, error) {
