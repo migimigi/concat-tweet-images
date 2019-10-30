@@ -68,7 +68,7 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	isHorizon := req.FormValue("horizon") != ""
-	result, err := appendImage(url.String(), isHorizon)
+	result, err := concatImages(url.String(), isHorizon)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -77,12 +77,12 @@ func handler(w http.ResponseWriter, req *http.Request) {
 	w.Write(result)
 }
 
-func appendImage(url string, isHorizon bool) ([]byte, error) {
+func concatImages(url string, isHorizon bool) ([]byte, error) {
 	urls, err := parse(url)
 	if err != nil {
 		return nil, err
 	}
-	tmpdir, err := ioutil.TempDir("", "appendImage")
+	tmpdir, err := ioutil.TempDir("", "concatImages")
 	if err != nil {
 		return nil, err
 	}
