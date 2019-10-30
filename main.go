@@ -62,13 +62,8 @@ func startServer(port int) error {
 }
 
 func handler(w http.ResponseWriter, req *http.Request) {
-	url, err := url.Parse(req.FormValue("q"))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 	isHorizon := req.FormValue("horizon") != ""
-	result, err := concatImages(url.String(), isHorizon)
+	result, err := concatImages(req.FormValue("q"), isHorizon)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -102,9 +97,12 @@ func concatImages(url string, isHorizon bool) ([]byte, error) {
 	return result, nil
 }
 
-func parse(url string) ([]string, error) {
-	fmt.Printf("parse: %s\n", url)
-	resp, err := http.Get(url)
+func parse(rawurl string) ([]string, error) {
+	url, err := url.Parse(rawurl)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.Get(url.String())
 	if err != nil {
 		return nil, err
 	}
