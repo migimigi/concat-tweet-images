@@ -10,8 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"errors"
-
 	"compress/zlib"
 
 	"github.com/PuerkitoBio/goquery"
@@ -76,10 +74,9 @@ func parse(url string) ([]string, error) {
 		readerZ, errZ := zlib.NewReader(resp.Body)
 		if errZ != nil {
 			return nil, errZ
-		} else {
-			reader = readerZ
 		}
 		defer readerZ.Close()
+		reader = readerZ
 	}
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
@@ -90,7 +87,7 @@ func parse(url string) ([]string, error) {
 		return url
 	})
 	if len(urls) == 0 {
-		return nil, errors.New("can not parse")
+		return nil, fmt.Errorf("cannot find image: %s", url)
 	}
 	return urls, nil
 }
@@ -101,7 +98,6 @@ func download(urls []string, dir string) error {
 		index := i
 		url := u
 		eg.Go(func() error {
-			fmt.Printf("start: %s %d\n", url, index)
 			// Create the file
 			fullpath := filepath.Join(dir, fmt.Sprintf("%d.jpg", index))
 			out, err := os.Create(fullpath)
@@ -122,7 +118,6 @@ func download(urls []string, dir string) error {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("end: %s %d\n", url, index)
 			return nil
 		})
 	}
