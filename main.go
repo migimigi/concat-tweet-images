@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/urfave/cli"
 
 	"compress/zlib"
 
@@ -17,8 +20,45 @@ import (
 )
 
 func main() {
+	app := cli.NewApp()
+
+	app.Name = "concat-tweet-images"
+	app.Version = "0.0.1"
+	app.Commands = []cli.Command{
+		{
+			Name:  "server",
+			Usage: "start server mode",
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:  "port, p",
+					Value: 8080,
+					Usage: "specify a port number",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				if err := startServer(c.Int("port")); err != nil {
+					return cli.NewExitError(fmt.Sprintf("cannot start server: %v", err), 1)
+				}
+				return nil
+			},
+		},
+	}
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func startServer(port int) error {
+	if 1024 >= port && port <= 65535 {
+		return fmt.Errorf("invalid port: %d", port)
+	}
 	http.HandleFunc("/", handler)
-	http.ListenAndServe("localhost:8080", nil)
+	err := http.ListenAndServe(fmt.Sprintf("localhost:%d", port), nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func handler(w http.ResponseWriter, req *http.Request) {
