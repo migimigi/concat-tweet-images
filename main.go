@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/urfave/cli"
 
@@ -72,8 +73,19 @@ func handler(w http.ResponseWriter, req *http.Request) {
 	w.Write(result)
 }
 
-func concatImages(url string, isHorizon bool) ([]byte, error) {
-	urls, err := parse(url)
+func concatImages(rawurl string, isHorizon bool) ([]byte, error) {
+	url, err := url.Parse(rawurl)
+	if err != nil {
+		return nil, err
+	}
+	if url.Scheme != "https" || url.Host != "twitter.com" {
+		return nil, fmt.Errorf("this url is not twitter: %s", url.String())
+	}
+	paths := strings.Split(url.Path, "/")
+	if len(paths) != 4 || paths[2] != "status" {
+		return nil, fmt.Errorf("this url is not tweet: %s", url.String())
+	}
+	urls, err := parse(url.String())
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +109,8 @@ func concatImages(url string, isHorizon bool) ([]byte, error) {
 	return result, nil
 }
 
-func parse(rawurl string) ([]string, error) {
-	url, err := url.Parse(rawurl)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := http.Get(url.String())
+func parse(url string) ([]string, error) {
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
