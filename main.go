@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/urfave/cli"
@@ -74,12 +75,15 @@ func handler(w http.ResponseWriter, req *http.Request) {
 	w.Write(result.Image)
 }
 
-type Result struct {
-	Tweetid string
-	Image   []byte
+type Tweet struct {
+	Id  int64
+	Url url.URL
 }
 
-func concatImages(rawurl string, isHorizon bool) (*Result, error) {
+func validateUrl(rawurl string) (*Tweet, error) {
+	if rawurl == "" {
+		return nil, fmt.Errorf("url is empty")
+	}
 	url, err := url.Parse(rawurl)
 	if err != nil {
 		return nil, err
@@ -91,7 +95,24 @@ func concatImages(rawurl string, isHorizon bool) (*Result, error) {
 	if len(paths) != 4 || paths[2] != "status" {
 		return nil, fmt.Errorf("this url is not tweet: %s", url.String())
 	}
-	urls, err := parse(url.String())
+	tweetid, err := strconv.ParseInt(paths[3], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tweet id: %s", url.String())
+	}
+	return &Tweet{Id: tweetid, Url: *url}, nil
+}
+
+type Result struct {
+	Tweetid int64
+	Image   []byte
+}
+
+func concatImages(rawurl string, isHorizon bool) (*Result, error) {
+	tweet, err := validateUrl(rawurl)
+	if err != nil {
+		return nil, err
+	}
+	urls, err := parse(tweet.Url.String())
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +133,7 @@ func concatImages(rawurl string, isHorizon bool) (*Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Result{Image: bytes, Tweetid: paths[3]}, nil
+	return &Result{Image: bytes, Tweetid: tweet.Id}, nil
 }
 
 func parse(url string) ([]string, error) {
