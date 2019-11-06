@@ -71,7 +71,7 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Header().Add("content-type", "image/jpeg")
-	w.Header().Add("content-disposition", fmt.Sprintf("filename=\"%s.jpg\"", result.Tweetid))
+	w.Header().Add("content-disposition", fmt.Sprintf("filename=\"%d.jpg\"", result.Tweetid))
 	w.Write(result.Image)
 }
 
