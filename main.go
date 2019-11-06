@@ -28,6 +28,22 @@ func main() {
 	app.Version = "0.0.1"
 	app.Commands = []cli.Command{
 		{
+			Name:  "concat",
+			Usage: "specify a tweet url",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "horizon, H",
+					Usage: "concat images horizontally",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				if err := startConcat(c.Args(), c.Bool("horizon")); err != nil {
+					return cli.NewExitError(fmt.Sprintf("cannot concat image: %v", err), 1)
+				}
+				return nil
+			},
+		},
+		{
 			Name:  "server",
 			Usage: "start server mode",
 			Flags: []cli.Flag{
@@ -49,6 +65,27 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func startConcat(args []string, isHorizon bool) error {
+	if len(args) != 1 {
+		return fmt.Errorf("require tweet url")
+	}
+	result, err := concatImages(args[0], isHorizon)
+	if err != nil {
+		return err
+	}
+	out, err := os.Create(fmt.Sprintf("%d.jpg", result.Tweetid))
+	if err != nil {
+		return err
+	}
+	_, err = out.Write(result.Image)
+	err = out.Sync()
+	err = out.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func startServer(port int) error {
