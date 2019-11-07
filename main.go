@@ -89,7 +89,7 @@ func startConcat(args []string, isHorizon bool) error {
 }
 
 func startServer(port int) error {
-	if 1024 >= port && port <= 65535 {
+	if port < 1024 || 65535 < port {
 		return fmt.Errorf("invalid port: %d", port)
 	}
 	http.HandleFunc("/", handler)
